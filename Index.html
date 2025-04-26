@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Selector de Retos GLUP</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+            color: #333;
+        }
+        h1 {
+            color: #e74c3c;
+            text-align: center;
+        }
+        .container {
+            background-color: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        .upload-section {
+            margin-bottom: 30px;
+            text-align: center;
+        }
+        .result-section {
+            display: none;
+            margin-top: 30px;
+            padding: 20px;
+            border: 2px dashed #e74c3c;
+            border-radius: 5px;
+            background-color: #fff9f9;
+        }
+        button {
+            background-color: #e74c3c;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s;
+        }
+        button:hover {
+            background-color: #c0392b;
+        }
+        #fileInput {
+            display: none;
+        }
+        .file-label {
+            display: inline-block;
+            padding: 10px 20px;
+            background-color: #3498db;
+            color: white;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-right: 10px;
+        }
+        .file-label:hover {
+            background-color: #2980b9;
+        }
+        .challenge-title {
+            font-size: 24px;
+            font-weight: bold;
+            color: #e74c3c;
+            margin-bottom: 10px;
+        }
+        .challenge-desc {
+            font-size: 18px;
+            line-height: 1.5;
+        }
+        .instructions {
+            margin-bottom: 20px;
+            padding: 15px;
+            background-color: #eaf7fd;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Selector de Retos GLUP</h1>
+        
+        <div class="instructions">
+            <h3>Instrucciones:</h3>
+            <ol>
+                <li>Sube tu archivo Excel con los retos (primera columna = título, segunda columna = descripción)</li>
+                <li>Haz clic en "Seleccionar Reto Aleatorio"</li>
+                <li>¡Completa el reto que te toque!</li>
+            </ol>
+        </div>
+        
+        <div class="upload-section">
+            <label for="fileInput" class="file-label">Seleccionar Archivo Excel</label>
+            <input type="file" id="fileInput" accept=".xlsx, .xls, .csv">
+            <button id="randomBtn" disabled>Seleccionar Reto Aleatorio</button>
+        </div>
+        
+        <div class="result-section" id="resultSection">
+            <div class="challenge-title" id="challengeTitle"></div>
+            <div class="challenge-desc" id="challengeDesc"></div>
+        </div>
+    </div>
+
+    <script>
+        let challenges = [];
+        
+        document.getElementById('fileInput').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const data = new Uint8Array(e.target.result);
+                const workbook = XLSX.read(data, { type: 'array' });
+                
+                // Get first sheet
+                const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+                
+                // Convert to JSON
+                const jsonData = XLSX.utils.sheet_to_json(firstSheet, { header: 1 });
+                
+                // Skip header row if exists
+                const startRow = jsonData[0] && jsonData[0][0] === "ID" ? 1 : 0;
+                
+                // Store challenges (assuming first column is title, second is description)
+                challenges = jsonData.slice(startRow).map(row => ({
+                    title: row[0] || "Sin título",
+                    description: row[1] || "Sin descripción"
+                }));
+                
+                document.getElementById('randomBtn').disabled = challenges.length === 0;
+                
+                if (challenges.length > 0) {
+                    alert(`Se cargaron ${challenges.length} retos correctamente!`);
+                } else {
+                    alert("No se encontraron retos en el archivo. Verifica el formato.");
+                }
+            };
+            reader.readAsArrayBuffer(file);
+        });
+        
+        document.getElementById('randomBtn').addEventListener('click', function() {
+            if (challenges.length === 0) {
+                alert("Primero carga un archivo con retos");
+                return;
+            }
+            
+            const randomIndex = Math.floor(Math.random() * challenges.length);
+            const randomChallenge = challenges[randomIndex];
+            
+            document.getElementById('challengeTitle').textContent = randomChallenge.title;
+            document.getElementById('challengeDesc').textContent = randomChallenge.description;
+            document.getElementById('resultSection').style.display = 'block';
+            
+            // Optional: Remove the selected challenge from the array
+            // challenges.splice(randomIndex, 1);
+            // document.getElementById('randomBtn').disabled = challenges.length === 0;
+        });
+    </script>
+</body>
+</html>
